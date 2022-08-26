@@ -1,0 +1,78 @@
+/* general */
+html {
+  overflow-y: auto;
+}
+
+* {
+  word-break: keep-all;
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background: white;
+  }
+  &::-webkit-scrollbar-thumb {
+    width: 6px;
+    height: 6px;
+    background: #FFEA00;
+    border-radius: 4px;
+  }
+}
+
+.corn-font {
+  font-family: 'Short Stack', cursive !important;
+}
+
+.w-auto {
+  width: auto;
+}
+
+
+.horizontal-menu {
+  .v-tab {
+    &:not(.horizontal-menu--active) {
+      color: #757575!important;
+    }
+  }
+  &--active {
+    color: #212121!important;
+  }
+}
+
+.container {
+  margin-top: 140px;
+}
+
+.reduce_text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.team-section {
+  max-height: 350px;
+  overflow: scroll;
+}
+
+table {
+  thead {
+    background: #FFEA00;
+    tr {
+      th {
+        &:first-child {
+          border-radius: 8px 0 0 0;
+        }
+        &:last-child {
+          border-radius: 0 8px 0 0;
+        }
+        &.active {
+          color: #673ab7 !important;
+          i {
+            color: #673ab7 !important;
+          }
+        }
+      }
+    }
+  }
+}
