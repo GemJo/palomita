@@ -9,6 +9,7 @@ import MovieCrewMember from '@/domain/movie/movieMember/movieCrewMember/MovieCre
 import MovieCastMember from '@/domain/movie/movieMember/movieCastMember/MovieCastMember';
 import MovieId from '@/domain/movie/MovieId';
 import MovieRating from '@/domain/movie/MovieRating';
+import MovieRepresentation from '@/domain/movie/MovieRepresentation';
 import MovieProductionCompany from '@/domain/movie/productionCompany/MovieProductionCompany';
 
 export default class Movie {
@@ -80,5 +81,20 @@ export default class Movie {
 
   public addProductionCompanies(productionCompanies: MovieProductionCompany[]): void {
     this.productionCompanies = productionCompanies;
+  }
+
+  public representedAs(movieRepresentation: MovieRepresentation): MovieRepresentation {
+    return movieRepresentation.setId(this.id)
+      .setTitle(this.title)
+      .setOriginalTitle(this.originalTitle)
+      .setSynopsis(this.synopsis)
+      .setReleaseDate(this.releaseDate)
+      .setRating(this.rating)
+      .setPosterPath(this.posterPath)
+      .setHomePage(this.homePage)
+      .setGenres(this.genres)
+      .setCrewMembers(this.crewMembers)
+      .setCastMembers(this.castMembers)
+      .setProductionCompanies(this.productionCompanies);
   }
 }
