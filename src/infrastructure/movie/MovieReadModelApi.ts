@@ -43,4 +43,37 @@ export default class MovieReadModelApi extends RestActions implements MovieReadM
     });
     return crewMembersGroupedById;
   }
+
+  public async popular(): Promise<Movie[]> {
+    const moviesRaw: any = await this.get('/movieDB/popular', {});
+
+    return this.buildListMovies(moviesRaw);
+  }
+
+  public async search(search: string): Promise<Movie[]> {
+    const moviesRaw: any = await this.get(`/movieDB/search?search=${search}`, {});
+
+    return this.buildListMovies(moviesRaw);
+  }
+
+  private buildListMovies(moviesRaw: any) {
+    const movies: Movie[] = [];
+    moviesRaw.forEach((movieRaw: any) => {
+      const movieBuilder: MovieBuilder = new MovieBuilder();
+      movieBuilder.widthId(movieRaw.id)
+        .withDescription(
+          movieRaw.title,
+          movieRaw.original_title,
+          movieRaw.overview,
+          movieRaw.release_date,
+          movieRaw.poster_path,
+          movieRaw.homepage,
+        )
+        .withRating(movieRaw.vote_average)
+        .withGenres(movieRaw.genre_ids.map((genre: any) => genre));
+
+      movies.push(movieBuilder.create());
+    });
+    return movies;
+  }
 }
