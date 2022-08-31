@@ -76,7 +76,7 @@
                       ¿Que puntuación le das?
                     </label>
                     <v-rating
-                      v-model="movie.rating"
+                      v-model="yourMovie.rating"
                       color="primary"
                       background-color="grey lighten-1"
                       half-increments
@@ -88,21 +88,21 @@
                     </label>
                     <div>
                       <v-icon
-                        :color="!movie.viewed ? 'primary' : 'grey lighten-2'"
+                        :color="!yourMovie.viewed ? 'primary' : 'grey lighten-2'"
                         class="mb-2"
-                        @click="movie.viewed = false"
+                        @click="yourMovie.viewed = false"
                       >
                         visibility_off
                       </v-icon>
                       <v-switch
-                        v-model="movie.viewed"
+                        v-model="yourMovie.viewed"
                         inset
                         class="d-inline-block mr-1 ml-4 mt-1"
                       />
                       <v-icon
-                        :color="movie.viewed ? 'primary' : 'grey lighten-2'"
+                        :color="yourMovie.viewed ? 'primary' : 'grey lighten-2'"
                         class="mb-2"
-                        @click="movie.viewed = true"
+                        @click="yourMovie.viewed = true"
                       >
                         visibility
                       </v-icon>
@@ -110,7 +110,7 @@
                   </v-col>
                   <v-col cols="12" md="6">
                     <v-textarea
-                      v-model="movie.comment"
+                      v-model="yourMovie.comment"
                       rows="5"
                       auto-grow
                       filled
@@ -177,7 +177,7 @@
               color="primary"
               class="font-weight-medium mx-1 secondary--text"
             >
-              {{ getName(genre) }}
+              {{ genre }}
             </v-chip>
           </v-col>
           <v-col cols="12">
@@ -198,7 +198,7 @@
           <v-col cols="12" class="team-section">
             <v-row align-content="center">
               <v-col
-                v-for="crew in crew"
+                v-for="crew in movie.crew"
                 :key="crew.id"
                 cols="12"
                 md="4"
@@ -242,7 +242,8 @@
 
 <script>
 import axios from 'axios';
-import { v4 } from 'uuid';
+import { retrieveYourMovie } from '@/infrastructure/application/yourMovie';
+import GetYourMovieQuery from '@/application/yourMovie/query/getYourMovie/GetYourMovieQuery';
 
 export default {
   name: 'movie-library-edit',
@@ -266,49 +267,15 @@ export default {
         },
       ];
     },
-    genresNames() {
-      return [
-        { key: 'adventure', name: 'Aventura' },
-        { key: 'fantasy', name: 'Fantasía' },
-        { key: 'animation', name: 'Animación' },
-        { key: 'drama', name: 'Drama' },
-        { key: 'horror', name: 'Terror' },
-        { key: 'action', name: 'Acción' },
-        { key: 'comedy', name: 'Comedia' },
-        { key: 'history', name: 'Historia' },
-        { key: 'western', name: 'Western' },
-        { key: 'thriller', name: 'Suspense' },
-        { key: 'crime', name: 'Crimen' },
-        { key: 'documentary', name: 'Documental' },
-        { key: 'science_fiction', name: 'Ciencia ficción' },
-        { key: 'mystery', name: 'Misterio' },
-        { key: 'music', name: 'Música' },
-        { key: 'romance', name: 'Romance' },
-        { key: 'family', name: 'Familia' },
-        { key: 'war', name: 'Bélica' },
-        { key: 'tv_movie', name: 'Película de TV' }];
-    },
-    crew() {
-      const crew = [];
-      this.movie.crew.forEach((person) => {
-        if (crew.find((el) => el.id === person.id)) {
-          return;
-        }
-        const personCollection = this.movie.crew.filter((el) => el.id === person.id);
-        crew.push({
-          profilePath: personCollection[0].profilePath,
-          name: personCollection[0].name,
-          id: personCollection[0].id,
-          job: personCollection.map((el) => el.job),
-        });
-      });
-
-      return crew;
-    },
   },
   data() {
     return {
       movie: {},
+      yourMovie: {
+        rating: 0,
+        viewed: false,
+        comment: '',
+      },
       feedback: {
         show: false,
         color: 'red',
@@ -320,13 +287,18 @@ export default {
     goTo(name) {
       this.$router.push({ name });
     },
-    getMovie() {
-      axios.get(`http://localhost:8085/api/movie/${this.$route.params.movieId}`)
-        .then((response) => {
-          this.movie = response.data;
-        }).catch((e) => {
-          console.error(e);
-        });
+    async getMovie() {
+      const response = await retrieveYourMovie
+        .invoke(new GetYourMovieQuery(this.$route.params.movieId));
+
+      if (!response.success) {
+        return;
+      }
+
+      this.movie = response.yourMovie;
+      Object.keys(this.yourMovie).forEach((key) => {
+        this.yourMovie[key] = this.movie[key];
+      });
     },
     getActorImg(url) {
       if (!url) {
@@ -341,9 +313,6 @@ export default {
       }
 
       return `https://image.tmdb.org/t/p/w220_and_h330_face/${url}`;
-    },
-    getName(genreId) {
-      return this.genresNames.find((genre) => genre.key === genreId).name;
     },
     save() {
       axios.put(`http://localhost:8085/api/movie/${this.movie.id}`, this.movie)
