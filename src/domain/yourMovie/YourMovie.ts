@@ -6,6 +6,7 @@ import PersonalInfoComment from '@/domain/yourMovie/personalInfo/PersonalInfoCom
 import PersonalInfo from '@/domain/yourMovie/personalInfo/PersonalInfo';
 import PersonalInfoRating from '@/domain/yourMovie/personalInfo/PersonalInfoRating';
 import YourMovieRepresentation from '@/domain/yourMovie/YourMovieRepresentation';
+import YourMovieToUpdate from '@/domain/yourMovie/YourMovieToUpdate';
 
 export default class YourMovie {
   private movie: Movie;
@@ -52,6 +53,11 @@ export default class YourMovie {
 
   public viewed(): boolean {
     return this.personalInfo.getViewed();
+  }
+
+  public update(yourMovieToUpdate: YourMovieToUpdate): void {
+    this.personalInfo = yourMovieToUpdate.personalInfo;
+    this.lastUpdateDate = YourMovieLastUpdateDate.generate();
   }
 
   public representedAs(yourMovieRepresentation: YourMovieRepresentation): YourMovieRepresentation {
