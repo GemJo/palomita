@@ -256,10 +256,10 @@
 </template>
 
 <script>
-import axios from 'axios';
-import { v4 } from 'uuid';
 import { retrieveMovieDetails } from '@/infrastructure/application/movie';
 import GetMovieQuery from '@/application/movie/query/getMovie/GetMovieQuery';
+import { createYourMovie } from '@/infrastructure/application/yourMovie';
+import CreateYourMovieCommand from '@/application/yourMovie/command/createYourMovie/CreateYourMovieCommand';
 
 export default {
   name: 'movie-library-add',
@@ -326,56 +326,34 @@ export default {
 
       return `https://image.tmdb.org/t/p/w220_and_h330_face/${url}`;
     },
-    save() {
-      const {
-        adult,
-        cast,
-        crew,
-        genres,
-        homepage,
-        originalTitle,
-        overview,
-        posterPath,
-        productionCompanies,
-        releaseDate,
-        title,
-        rating,
-        viewed,
-        comment,
-      } = { ...this.movie, ...this.yourMovie };
-      const movie = {
-        adult,
-        cast,
-        crew,
-        genres,
-        homepage,
-        originalTitle,
-        overview,
-        posterPath,
-        productionCompanies,
-        releaseDate,
-        title,
-        rating,
-        viewed,
-        comment,
-        id: v4(),
-        created: new Date(),
-        lastUpdate: new Date(),
-      };
-      axios.post('http://localhost:8085/api/movie/save', movie)
-        .then((response) => {
-          this.feedback.color = 'success';
-          this.feedback.text = 'Bien! Película guardad correctamente';
-          this.feedback.show = true;
-          this.$router.push({ name: 'library' });
-        }).catch((e) => {
-          this.feedback.color = 'error';
-          this.feedback.text = 'Ops! Ha ocurrido un error';
-          if (e.request.status === 409) {
-            this.feedback.text = 'Ops! La película ya está registrada';
-          }
-          this.feedback.show = true;
-        });
+    async save() {
+      const response = await createYourMovie.invoke(new CreateYourMovieCommand(
+        this.movie.id,
+        this.yourMovie.rating,
+        this.yourMovie.viewed,
+        this.yourMovie.comment,
+      ));
+
+      this.showFeedBack(response);
+      if (!response.success) {
+        return;
+      }
+
+      this.$router.push({ name: 'library' });
+    },
+    showFeedBack(response) {
+      this.feedback.color = 'success';
+      this.feedback.text = 'Bien! Película guardad correctamente';
+
+      if (!response.success) {
+        this.feedback.color = 'error';
+        this.feedback.text = 'Ops! Ha ocurrido un error';
+        if (response.error.status === 409) {
+          this.feedback.text = 'Ops! La película ya está registrada';
+        }
+      }
+
+      this.feedback.show = true;
     },
   },
   beforeMount() {
