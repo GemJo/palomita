@@ -241,9 +241,10 @@
 </template>
 
 <script>
-import axios from 'axios';
-import { retrieveYourMovie } from '@/infrastructure/application/yourMovie';
+import { editYourMovie, retrieveYourMovie } from '@/infrastructure/application/yourMovie';
 import GetYourMovieQuery from '@/application/yourMovie/query/getYourMovie/GetYourMovieQuery';
+import EditYourMovieCommand
+  from '@/application/yourMovie/command/editYourMovie/EditYourMovieCommand';
 
 export default {
   name: 'movie-library-edit',
@@ -314,21 +315,31 @@ export default {
 
       return `https://image.tmdb.org/t/p/w220_and_h330_face/${url}`;
     },
-    save() {
-      axios.put(`http://localhost:8085/api/movie/${this.movie.id}`, this.movie)
-        .then((response) => {
-          this.feedback.color = 'success';
-          this.feedback.text = 'Bien! Película se ha editado correctamente';
-          this.feedback.show = true;
-          this.$router.push({ name: 'library' });
-        }).catch((e) => {
-          this.feedback.color = 'error';
-          this.feedback.text = 'Ops! Ha ocurrido un error';
-          if (e.request.status === 409) {
-            this.feedback.text = 'Ops! La película ya está registrada';
-          }
-          this.feedback.show = true;
-        });
+    async save() {
+      const response = await editYourMovie.invoke(new EditYourMovieCommand(
+        this.movie.id,
+        this.yourMovie.rating,
+        this.yourMovie.viewed,
+        this.yourMovie.comment,
+      ));
+
+      this.showFeedBack(response);
+      if (!response.success) {
+        return;
+      }
+
+      this.$router.push({ name: 'library' });
+    },
+    showFeedBack(response) {
+      this.feedback.color = 'success';
+      this.feedback.text = 'Bien! Película se ha editado correctamente';
+
+      if (!response.success) {
+        this.feedback.color = 'error';
+        this.feedback.text = 'Ops! Ha ocurrido un error';
+      }
+
+      this.feedback.show = true;
     },
   },
   beforeMount() {
