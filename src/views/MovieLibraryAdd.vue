@@ -59,7 +59,7 @@
               class="text-caption ma-1"
             >
               {{ company.name }}
-              <span v-if="company.origin_country">({{ company.origin_country }})</span>
+              <span v-if="company.country">({{ company.country }})</span>
             </v-chip>
           </v-col>
         </v-row>
@@ -192,7 +192,7 @@
               color="primary"
               class="font-weight-medium mx-1 secondary--text"
             >
-              {{ getName(genre) }}
+              {{ genre }}
             </v-chip>
           </v-col>
           <v-col cols="12">
@@ -213,7 +213,7 @@
           <v-col cols="12" class="team-section">
             <v-row align-content="center">
               <v-col
-                v-for="crew in crew"
+                v-for="crew in movie.crew"
                 :key="crew.id"
                 cols="12"
                 md="4"
@@ -258,6 +258,8 @@
 <script>
 import axios from 'axios';
 import { v4 } from 'uuid';
+import { retrieveMovieDetails } from '@/infrastructure/application/movie';
+import GetMovieQuery from '@/application/movie/query/getMovie/GetMovieQuery';
 
 export default {
   name: 'movie-library-add',
@@ -281,45 +283,6 @@ export default {
         },
       ];
     },
-    genresNames() {
-      return [
-        { key: 'adventure', name: 'Aventura' },
-        { key: 'fantasy', name: 'Fantasía' },
-        { key: 'animation', name: 'Animación' },
-        { key: 'drama', name: 'Drama' },
-        { key: 'horror', name: 'Terror' },
-        { key: 'action', name: 'Acción' },
-        { key: 'comedy', name: 'Comedia' },
-        { key: 'history', name: 'Historia' },
-        { key: 'western', name: 'Western' },
-        { key: 'thriller', name: 'Suspense' },
-        { key: 'crime', name: 'Crimen' },
-        { key: 'documentary', name: 'Documental' },
-        { key: 'science_fiction', name: 'Ciencia ficción' },
-        { key: 'mystery', name: 'Misterio' },
-        { key: 'music', name: 'Música' },
-        { key: 'romance', name: 'Romance' },
-        { key: 'family', name: 'Familia' },
-        { key: 'war', name: 'Bélica' },
-        { key: 'tv_movie', name: 'Película de TV' }];
-    },
-    crew() {
-      const crew = [];
-      this.movie.crew.forEach((person) => {
-        if (crew.find((el) => el.id === person.id)) {
-          return;
-        }
-        const personCollection = this.movie.crew.filter((el) => el.id === person.id);
-        crew.push({
-          profilePath: personCollection[0].profilePath,
-          name: personCollection[0].name,
-          id: personCollection[0].id,
-          job: personCollection.map((el) => el.job),
-        });
-      });
-
-      return crew;
-    },
   },
   data() {
     return {
@@ -340,13 +303,14 @@ export default {
     goTo(name) {
       this.$router.push({ name });
     },
-    getMovie() {
-      axios.get(`http://localhost:8085/api/movieDB/movie?id=${this.$route.params.movieId}`)
-        .then((response) => {
-          this.movie = response.data;
-        }).catch((e) => {
-          console.error(e);
-        });
+    async getMovie() {
+      const response = await retrieveMovieDetails
+        .invoke(new GetMovieQuery(Number(this.$route.params.movieId)));
+      if (!response.success) {
+        return;
+      }
+
+      this.movie = response.movie;
     },
     getActorImg(url) {
       if (!url) {
@@ -361,9 +325,6 @@ export default {
       }
 
       return `https://image.tmdb.org/t/p/w220_and_h330_face/${url}`;
-    },
-    getName(genreId) {
-      return this.genresNames.find((genre) => genre.key === genreId).name;
     },
     save() {
       const {
