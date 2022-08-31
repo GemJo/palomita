@@ -5,6 +5,7 @@ import YourMovieLastUpdateDate from '@/domain/yourMovie/YourMovieLastUpdateDate'
 import PersonalInfoComment from '@/domain/yourMovie/personalInfo/PersonalInfoComment';
 import PersonalInfo from '@/domain/yourMovie/personalInfo/PersonalInfo';
 import PersonalInfoRating from '@/domain/yourMovie/personalInfo/PersonalInfoRating';
+import YourMovieRepresentation from '@/domain/yourMovie/YourMovieRepresentation';
 
 export default class YourMovie {
   private movie: Movie;
@@ -51,5 +52,15 @@ export default class YourMovie {
 
   public viewed(): boolean {
     return this.personalInfo.getViewed();
+  }
+
+  public representedAs(yourMovieRepresentation: YourMovieRepresentation): YourMovieRepresentation {
+    yourMovieRepresentation.setMovie(this.movie)
+      .setId(this.id)
+      .setCreatedDate(this.createdDate)
+      .setLastUpdateDate(this.lastUpdateDate)
+      .setPersonalInfo(this.personalInfo);
+
+    return yourMovieRepresentation;
   }
 }
