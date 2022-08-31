@@ -27,4 +27,15 @@ export default class YourMovieRepositoryApi extends RestActions implements YourM
       yourMovieRawRepresentation.toJson(),
     );
   }
+
+  public async remove(yourMovieId: YourMovieId): Promise<void> {
+    await this.delete(`/movie/${yourMovieId.toString()}`, {});
+  }
+
+  public async all(): Promise<YourMovie[]> {
+    const yourMoviesRaw: any = await this.get('/movies', {});
+
+    return yourMoviesRaw
+      .map((yourMovieRaw: any) => YourMovieHydrate.invoke(yourMovieRaw));
+  }
 }
