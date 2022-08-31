@@ -77,7 +77,7 @@
           </v-icon>
         </template>
         <template v-slot:item.lastUpdate="{ item }">
-            {{ item.lastUpdate | date}}
+            {{ item.lastUpdate }}
         </template>
         <template v-slot:item.actions="{ item }">
           <v-btn
@@ -124,7 +124,7 @@
             <v-card-text>
               <v-row dense>
                 <v-col cols="12" class="caption grey--text text--lighten-1">
-                  Última actualización: {{ movie.lastUpdate | date }}
+                  Última actualización: {{ movie.lastUpdate }}
                 </v-col>
                 <v-col cols="6">
                   <v-rating
@@ -141,13 +141,13 @@
                     column
                   >
                     <v-chip
-                      v-for="genre in movie.genreIds"
+                      v-for="genre in movie.genres"
                       :key="genre"
                       disabled
                       x-small
                       class="text-caption mx-1"
                     >
-                      {{ getName(genre) }}
+                      {{ genre }}
                     </v-chip>
                   </v-chip-group>
                 </v-col>
@@ -192,7 +192,10 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { deleteYourMovie, fetchListYourMovies } from '@/infrastructure/application/yourMovie';
+import DeleteYourMovieCommand
+  from '@/application/yourMovie/command/deleteYourMovie/DeleteYourMovieCommand';
+import ListYourMovieQuery from '@/application/yourMovie/query/ListYourMovie/ListYourMovieQuery';
 
 export default {
   name: 'library',
@@ -237,28 +240,6 @@ export default {
         },
       ];
     },
-    genresNames() {
-      return [
-        { key: 'adventure', name: 'Aventura' },
-        { key: 'fantasy', name: 'Fantasía' },
-        { key: 'animation', name: 'Animación' },
-        { key: 'drama', name: 'Drama' },
-        { key: 'horror', name: 'Terror' },
-        { key: 'action', name: 'Acción' },
-        { key: 'comedy', name: 'Comedia' },
-        { key: 'history', name: 'Historia' },
-        { key: 'western', name: 'Western' },
-        { key: 'thriller', name: 'Suspense' },
-        { key: 'crime', name: 'Crimen' },
-        { key: 'documentary', name: 'Documental' },
-        { key: 'science_fiction', name: 'Ciencia ficción' },
-        { key: 'mystery', name: 'Misterio' },
-        { key: 'music', name: 'Música' },
-        { key: 'romance', name: 'Romance' },
-        { key: 'family', name: 'Familia' },
-        { key: 'war', name: 'Bélica' },
-        { key: 'tv_movie', name: 'Película de TV' }];
-    },
     movies() {
       if (this.search.trim().length < 3) {
         return this.listMovies;
@@ -281,44 +262,42 @@ export default {
     };
   },
   methods: {
-    getMovies() {
-      axios.get('http://localhost:8085/api/movies')
-        .then((response) => {
-          this.listMovies = response.data;
-          this.listMovies.forEach((movie, index) => {
-            this.listMovies[index].director = movie.crew.find((person) => person.job.includes('Director')).name;
-          });
-          this.listMovies = this.listMovies.sort((a, b) => (a.lastUpdate > b.lastUpdate ? -1 : 1));
-        }).catch((e) => {
-          this.feedback.color = 'error';
-          this.feedback.text = 'Ha ocurrido un error cargando la libreria';
-          this.feedback.show = true;
-          console.error(e);
-        });
+    async getMovies() {
+      const response = await fetchListYourMovies.invoke(new ListYourMovieQuery());
+
+      if (!response.success) {
+        this.feedback.color = 'error';
+        this.feedback.text = 'Ha ocurrido un error cargando la libreria';
+        this.feedback.show = true;
+        return;
+      }
+
+      this.listMovies = response.movies;
     },
-    deleteMovie(id) {
-      axios.delete(`http://localhost:8085/api/movie/${id}`)
-        .then((response) => {
-          this.feedback.color = 'success';
-          this.feedback.text = 'Película eliminada correctamente';
-          this.feedback.show = true;
-          this.getMovies();
-        }).catch((e) => {
-          console.error(e);
-          this.feedback.color = 'error';
-          this.feedback.text = 'Ha ocurrido un error al eliminar la película';
-          this.feedback.show = true;
-        });
+    async deleteMovie(id) {
+      const response = await deleteYourMovie.invoke(new DeleteYourMovieCommand(id));
+
+      this.showFeedBack(response);
+      if (!response.success) {
+        return;
+      }
+
+      this.getMovies();
     },
-    getName(genreId) {
-      return this.genresNames.find((genre) => genre.key === genreId).name;
+    showFeedBack(response) {
+      this.feedback.color = 'success';
+      this.feedback.text = 'Película eliminada correctamente';
+
+      if (!response.success) {
+        this.feedback.color = 'error';
+        this.feedback.text = 'Ha ocurrido un error al eliminar la película';
+      }
+
+      this.feedback.show = true;
     },
   },
   beforeMount() {
     this.getMovies();
-  },
-  filters: {
-    date: (date) => date.split('T', 1)[0],
   },
 };
 </script>
