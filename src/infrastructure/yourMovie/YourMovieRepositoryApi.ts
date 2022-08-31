@@ -17,4 +17,14 @@ export default class YourMovieRepositoryApi extends RestActions implements YourM
     const yourMovieRaw: any = await this.get(`/movie/${yourMovieId.toString()}`, {});
     return YourMovieHydrate.invoke(yourMovieRaw);
   }
+
+  public async update(yourMovie: YourMovie): Promise<void> {
+    const yourMovieRawRepresentation = yourMovie
+      .representedAs(new RawYourMovieRepresentation()) as RawYourMovieRepresentation;
+
+    await this.put(
+      `/movie/${yourMovie.getId().toString()}`,
+      yourMovieRawRepresentation.toJson(),
+    );
+  }
 }

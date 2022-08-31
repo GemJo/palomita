@@ -4,6 +4,7 @@ import YourMovieId from '@/domain/yourMovie/YourMovieId';
 interface YourMovieRepository {
   save(yourMovie: YourMovie): Promise<void>
   retrieve(yourMovieId: YourMovieId): Promise<YourMovie>
+  update(yourMovie: YourMovie): Promise<void>
 }
 
 export default YourMovieRepository;
