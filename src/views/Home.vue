@@ -52,12 +52,12 @@
                       background-color="grey lighten-1"
                       half-increments
                       readonly
-                      :value="movie.voteAverage * 5 / 10"
+                      :value="movie.voteAverage"
                     />
                   </v-col>
                   <v-col cols="6" class="text-right">
                     <span class="caption yellow--text text--darken-2">
-                      {{ movie.voteAverage * 5 / 10 }}
+                      {{ movie.voteAverage}}
                     </span>
                   </v-col>
                   <v-col cols="12">
@@ -71,7 +71,7 @@
                         x-small
                         class="text-caption mx-1"
                       >
-                        {{ getName(genre) }}
+                        {{ genre }}
                       </v-chip>
                     </v-chip-group>
                   </v-col>
@@ -208,7 +208,7 @@
                         x-small
                         class="text-caption mx-1"
                       >
-                        {{ getName(genre) }}
+                        {{ genre }}
                       </v-chip>
                     </v-chip-group>
                   </v-col>
@@ -242,7 +242,10 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { getPopularMovies, searchMovie } from '@/infrastructure/application/movie';
+import ListPopularMovieQuery
+  from '@/application/movie/query/listPopularMovies/ListPopularMovieQuery';
+import SearchMovieQuery from '@/application/movie/query/searchMovie/SearchMovieQuery';
 
 export default {
   name: 'home',
@@ -260,28 +263,6 @@ export default {
 
       return totalFilmsToShow;
     },
-    genresNames() {
-      return [
-        { key: 'adventure', name: 'Aventura' },
-        { key: 'fantasy', name: 'Fantasía' },
-        { key: 'animation', name: 'Animación' },
-        { key: 'drama', name: 'Drama' },
-        { key: 'horror', name: 'Terror' },
-        { key: 'action', name: 'Acción' },
-        { key: 'comedy', name: 'Comedia' },
-        { key: 'history', name: 'Historia' },
-        { key: 'western', name: 'Western' },
-        { key: 'thriller', name: 'Suspense' },
-        { key: 'crime', name: 'Crimen' },
-        { key: 'documentary', name: 'Documental' },
-        { key: 'science_fiction', name: 'Ciencia ficción' },
-        { key: 'mystery', name: 'Misterio' },
-        { key: 'music', name: 'Música' },
-        { key: 'romance', name: 'Romance' },
-        { key: 'family', name: 'Familia' },
-        { key: 'war', name: 'Bélica' },
-        { key: 'tv_movie', name: 'Película de TV' }];
-    },
   },
   data() {
     return {
@@ -294,23 +275,19 @@ export default {
   },
   methods: {
     async getMostPopularsMovie() {
-      axios.get('http://localhost:8085/api/movieDB/popular')
-        .then((response) => {
-          // https://image.tmdb.org/t/p/w220_and_h330_face/
-          this.mostPopularFilms = response.data
-            .sort((a, b) => (a.voteAverage > b.voteAverage ? -1 : 1));
-        }).catch((e) => {
-          console.error(e);
-        });
+      const response = await getPopularMovies.invoke(new ListPopularMovieQuery());
+
+      if (!response.success) {
+        return;
+      }
+
+      this.mostPopularFilms = response.movies;
     },
     getMoviesToShow(totalFilmsToShow) {
       return this.mostPopularFilms.slice(
         totalFilmsToShow * this.totalPopularFilms,
         totalFilmsToShow * this.totalPopularFilms + this.totalPopularFilms,
       );
-    },
-    getName(genreId) {
-      return this.genresNames.find((genre) => genre.key === genreId).name;
     },
     changeCarouselPosition(nextPosition) {
       if (nextPosition < 0) {
@@ -325,16 +302,17 @@ export default {
 
       this.carouselPosition = nextPosition;
     },
-    searchMovie() {
+    async searchMovie() {
       if (this.search.trim().length < 3) {
         return;
       }
-      axios.get(`http://localhost:8085/api/movieDB/search?search=${this.search}`)
-        .then((response) => {
-          this.moviesSearch = response.data;
-        }).catch((error) => {
-          console.error(error);
-        });
+
+      const response = await searchMovie.invoke(new SearchMovieQuery(this.search));
+      if (!response.success) {
+        return;
+      }
+
+      this.moviesSearch = response.movies;
     },
     goTo(nameRoute, params) {
       this.$router.push({ name: nameRoute, params });
